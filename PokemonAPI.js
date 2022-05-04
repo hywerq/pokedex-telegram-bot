@@ -5,7 +5,6 @@ function capitalize(s)
 
 export class PokemonAPI {
     getPokemonDataMessage (response) {
-        console.log(response)
         const name = response.names.filter(pokeAPIName => pokeAPIName.language.name === 'en')[0].name;
         const rate = response.is_legendary
             ? 'Legendary pokemon'
@@ -184,6 +183,41 @@ export class PokemonAPI {
         })
 
         return berries;
+    }
+
+    getItemByNameMessage(response) {
+        const name = capitalize(response.name);
+        const category = 'Category: ' + response.category.name;
+        const description = response.effect_entries[0].effect;
+        const cost = 'Cost: ' + response.cost;
+
+        let attributes = 'Attributes: ';
+        let array = response.attributes.sort(function(a,b) {
+            return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
+        });
+        array.forEach(element => {
+            attributes += element.name + ', ';
+        })
+
+        return name + '\n'
+            + category + '\n\n'
+            + description + '\n'
+            + attributes + '\n\n'
+            + cost;
+    }
+    getItemsByAttributeMessage(response) {
+        const description = response.descriptions[0].description;
+
+        let items = 'Items: \n';
+        let array = response.items.sort(function(a,b) {
+            return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
+        });
+        array.forEach(element => {
+            items += capitalize(element.name) + '\n';
+        })
+
+        return description + '\n\n'
+            + items;
     }
 }
 

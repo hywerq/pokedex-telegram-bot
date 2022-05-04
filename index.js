@@ -20,7 +20,12 @@ const start = () => {
         {command: '/find_nature', description: `Find info of pokemon's nature by its name`},
         {command: '/all_pokemon_type', description: 'Get all pokemons according to their type'},
         {command: '/all_pokemon_shape', description: 'Get all pokemons according to their shape'},
-        {command: '/all_pokemon_color', description: 'Get all pokemons according to their color'}
+        {command: '/all_pokemon_color', description: 'Get all pokemons according to their color'},
+        {command: '/find_berry', description: 'Find berry info by its name'},
+        {command: '/all_berry_firmness', description: 'Get all berries according to firmness'},
+        {command: '/all_berry_flavor', description: 'Get all berries according to flavor'},
+        {command: '/find_item', description: 'Find item info by its name'},
+        {command: '/all_item_attribute', description: 'Get all items according to attribute'}
     ]);
 
     bot.on('message', async msg => {
@@ -55,6 +60,26 @@ const start = () => {
             }
             if (args[0] === '/all_pokemon_color') {
                 await getAllColorPokemonsByName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/find_berry') {
+                await getBerryByName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/all_berry_firmness') {
+                await getBerriesByFirmnessName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/all_berry_flavor') {
+                await getBerriesByFlavorName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/find_item') {
+                await getItemByName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/all_item_attribute') {
+                await getItemsByAttributeName(chatId, args[1]);
                 return;
             }
             if (args[0] === '/game') {
@@ -151,6 +176,14 @@ const start = () => {
                 await getBerriesByFlavorName(chatId, args[0]);
                 return;
             }
+            if (chat[chatId].hasOwnProperty('item')) {
+                await getItemByName(chatId, args[0]);
+                return;
+            }
+            if (chat[chatId].hasOwnProperty('attribute')) {
+                await getItemsByAttributeName(chatId, args[0]);
+                return;
+            }
         }
 
         await sendPardon(chatId, msg.message_id);
@@ -224,6 +257,16 @@ const start = () => {
                 await bot.sendMessage(chatId, 'Give me the flavor\n\n' +
                     'e.g. sweet, sour, bitter');
                 chat[chatId] = {flavor: true};
+                break;
+            case 'item':
+                await bot.sendMessage(chatId, 'Give me the item\'s name\n\n' +
+                    'e.g. poke-ball, ice-heal, potion');
+                chat[chatId] = {item: true};
+                break;
+            case 'attribute':
+                await bot.sendMessage(chatId, 'Give me the item\'s attribute\n\n' +
+                    'e.g. holdable, underground, consumable');
+                chat[chatId] = {attribute: true};
                 break;
         }
     });
@@ -570,5 +613,40 @@ async function getBerriesByFlavorName(chatId, name) {
 }
 
 /* Item info */
+async function getItemByName(chatId, name) {
+    if (name === undefined) {
+        await bot.sendMessage(chatId, 'Oops, seems like you forgot the item\'s name');
+        return;
+    }
+
+    P.getItemByName(name)
+        .then((response) => {
+            bot.sendMessage(chatId, PokemonAPI.getItemByNameMessage(response));
+            bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${response.name}.png`)
+        })
+        .catch( (error) => {
+            console.log(error);
+            bot.sendMessage(chatId, `Couldn't get ${name}`)
+        });
+    chat[chatId] = {};
+}
+
+async function getItemsByAttributeName(chatId, name) {
+    if (name === undefined) {
+        await bot.sendMessage(chatId, 'Oops, seems like you forgot the item\'s name');
+        return;
+    }
+
+    P.getItemAttributeByName(name)
+        .then((response) => {
+            bot.sendMessage(chatId, PokemonAPI.getItemsByAttributeMessage(response));
+            bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${response.item.name}.png`)
+        })
+        .catch( (error) => {
+            console.log(error);
+            bot.sendMessage(chatId, `Couldn't get ${name}`)
+        });
+    chat[chatId] = {};
+}
 
 start()
