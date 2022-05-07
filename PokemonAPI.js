@@ -87,6 +87,19 @@ export class PokemonAPI {
 
         return  damageType + '\n' + moves;
     }
+    getHabitatPokemonsMessage(response) {
+        let pokemons = '';
+
+        const array = response.pokemon.sort(function(a,b) {
+            return a.pokemon.name > b.pokemon.name ? 1 : b.pokemon.name > a.pokemon.name ? -1 : 0;
+        });
+
+        array.forEach(element => {
+            pokemons += capitalize(element.pokemon.name) + '\n';
+        })
+
+        return pokemons;
+    }
     getAllTypePokemonsMessage (response) {
         let pokemons = '';
 

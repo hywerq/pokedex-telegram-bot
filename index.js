@@ -2,10 +2,11 @@ import TelegramApi from 'node-telegram-bot-api';
 import Pokedex from 'pokedex-promise-v2';
 import {startOptions, findOptions, testAnswerOptions, pokemonOptions, berryOptions, itemOptions} from './options.js'
 import PokemonAPI from './PokemonAPI.js';
-import {token} from './config.js';
+import {TOKEN, YA_KEY} from './config.js';
+import axios from "axios";
 
 const P = new Pokedex();
-const bot = new TelegramApi(token, {polling: true});
+const bot = new TelegramApi(TOKEN, {polling: true});
 
 const chat = {};
 
@@ -18,6 +19,7 @@ const start = () => {
         {command: '/find_pokemon', description: 'Find pokemon by its name'},
         {command: '/find_type', description: `Find info of pokemon's type by its name`},
         {command: '/find_nature', description: `Find info of pokemon's nature by its name`},
+        {command: '/habitat', description: `Find all pokemons according to habitat`},
         {command: '/all_pokemon_type', description: 'Get all pokemons according to their type'},
         {command: '/all_pokemon_shape', description: 'Get all pokemons according to their shape'},
         {command: '/all_pokemon_color', description: 'Get all pokemons according to their color'},
@@ -28,10 +30,123 @@ const start = () => {
         {command: '/all_item_attribute', description: 'Get all items according to attribute'}
     ]);
 
+    bot.on('voice', msg => {
+        const chatId = msg.chat.id;
+        const stream = bot.getFileStream(msg.voice.file_id)
+
+        let chunks = [];
+        stream.on('data', chunk => chunks.push(chunk));
+        stream.on('end', async () => {
+            const axiosConfig = {
+                method: 'POST',
+                url: 'https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?lang=ru-RU',
+                headers: {
+                    Authorization: 'Api-Key ' + YA_KEY
+                },
+                data: Buffer.concat(chunks)
+            };
+
+            axios(axiosConfig)
+                .then((response) => {
+                    const command = response.data.result;
+                    console.log(command)
+                    switch (command) {
+                        case 'Выбрать категорию':
+                            bot.sendMessage(chatId, 'Choose category', findOptions);
+                            break;
+                        case 'Покемоны':
+                            bot.sendMessage(chatId, 'Pokemon info', pokemonOptions);
+                            break;
+                        case 'Ягоды':
+                            bot.sendMessage(chatId, 'Berry info', berryOptions);
+                            break;
+                        case 'Предметы':
+                            bot.sendMessage(chatId, 'Item info', itemOptions);
+                            break;
+                        case 'Начать игру':
+                            startGame(chatId);
+                            break;
+                        case 'Начать тест':
+                            startTest(chatId);
+                            break;
+                        case 'Найти покемона':
+                            bot.sendMessage(chatId, 'Give me the name of the pokemon you are looking for\n\n' +
+                                'e.g. pikachu, snorlax, lopunny');
+                            chat[chatId] = {find_pokemon: true};
+                            break;
+                        case 'Найти тип покемона':
+                            bot.sendMessage(chatId, 'Give me the type you are looking for\n\n' +
+                                'e.g. normal, steel, grass');
+                            chat[chatId] = {find_type: true};
+                            break;
+                        case 'Найти характер покемона':
+                            bot.sendMessage(chatId, 'Give me the nature you are looking for\n\n' +
+                                'e.g. bold, calm, jolly');
+                            chat[chatId] = {find_nature: true};
+                            break;
+                        case 'Найти покемона по месту обитания':
+                            bot.sendMessage(chatId, 'Give me the habitat name\n\n' +
+                                'e.g. ground, urban, jungle');
+                            chat[chatId] = {habitat: true};
+                            break;
+                        case 'Найти всех покемонов по типу':
+                            bot.sendMessage(chatId, 'Give me the pokemons type name\n\n' +
+                                'e.g. normal, steel, grass');
+                            chat[chatId] = {find_all_type: true};
+                            break;
+                        case 'Найти всех покемонов по форме':
+                            bot.sendMessage(chatId, 'Give me the shape name\n\n' +
+                                'e.g. heart, ball, triangle');
+                            chat[chatId] = {find_all_shape: true};
+                            break;
+                        case 'Найти всех покемонов по цвету':
+                            bot.sendMessage(chatId, 'Give me the color name\n\n' +
+                                'e.g. black, blue, white');
+                            chat[chatId] = {find_all_color: true};
+                            break;
+                        case 'Найти ягоду':
+                            bot.sendMessage(chatId, 'Give me the berry name\n\n' +
+                                'e.g. leppa, tomato, mago');
+                            chat[chatId] = {berry: true};
+                            break;
+                        case 'Найти все ягоды по твердости':
+                            bot.sendMessage(chatId, 'Give me the firmness\n\n' +
+                                'e.g. hard, soft, very-soft');
+                            chat[chatId] = {firmness: true};
+                            break;
+                        case 'Найти все ягоды по вкусу':
+                            bot.sendMessage(chatId, 'Give me the flavor\n\n' +
+                                'e.g. sweet, sour, bitter');
+                            chat[chatId] = {flavor: true};
+                            break;
+                        case 'Найти предмет':
+                            bot.sendMessage(chatId, 'Give me the item\'s name\n\n' +
+                                'e.g. poke-ball, ice-heal, potion');
+                            chat[chatId] = {item: true};
+                            break;
+                        case 'Найти все предметы по атрибуту':
+                            bot.sendMessage(chatId, 'Give me the item\'s attribute\n\n' +
+                                'e.g. holdable, underground, consumable');
+                            chat[chatId] = {attribute: true};
+                            break;
+                        default:
+                            bot.sendMessage(chatId, 'Couldn\'t recognize your command.\n' +
+                                'Could you repeat, please?')
+                    }
+                })
+                .catch((error) => {
+                    bot.sendMessage(chatId, 'Couldn\'t recognize your speech')
+                });
+        });
+    });
+
     bot.on('message', async msg => {
+        if(msg.voice) {
+            return;
+        }
+
         const chatId = msg.chat.id;
         const args = msg.text.toLowerCase().split(' ');
-        //console.log(chatId)
 
         if (args[0][0] === '/') {
             if (args[0] === '/start') {
@@ -48,6 +163,10 @@ const start = () => {
             }
             if (args[0] === '/find_type') {
                 await getTypeByName(chatId, args[1]);
+                return;
+            }
+            if (args[0] === '/habitat') {
+                await getHabitatPokemons(chatId, args[1]);
                 return;
             }
             if (args[0] === '/all_pokemon_shape') {
@@ -152,6 +271,10 @@ const start = () => {
                 await getNatureByName(chatId, args[0]);
                 return;
             }
+            if (chat[chatId].hasOwnProperty('habitat')) {
+                await getHabitatPokemons(chatId, args[0]);
+                return;
+            }
             if (chat[chatId].hasOwnProperty('find_all_type')) {
                 await getAllTypePokemonsByName(chatId, args[0]);
                 return;
@@ -227,6 +350,11 @@ const start = () => {
                 await bot.sendMessage(chatId, 'Give me the nature you are looking for\n\n' +
                     'e.g. bold, calm, jolly');
                 chat[chatId] = {find_nature: true};
+                break;
+            case 'habitat':
+                await bot.sendMessage(chatId, 'Give me the habitat name\n\n' +
+                    'e.g. ground, urban, jungle');
+                chat[chatId] = {habitat: true};
                 break;
             case 'all_type':
                 await bot.sendMessage(chatId, 'Give me the pokemons type name\n\n' +
@@ -422,7 +550,7 @@ async function sendNextQuestion(chatId) {
             await bot.sendMessage(chatId, 'The best pokemon for you...');
             await bot.sendMessage(chatId, 'Is...');
 
-            switch (chat[chatId].result / 4) {
+            switch (Math.floor(chat[chatId].result / 4)) {
                 case 1:
                     await getPokemonSpeciesByName(chatId, 101);
                     break;
@@ -551,6 +679,23 @@ async function getAllColorPokemonsByName(chatId, name) {
     P.getPokemonColorByName(name)
         .then((response) => {
             bot.sendMessage(chatId, PokemonAPI.getAllColorPokemonsMessage(response));
+        })
+        .catch((error) => {
+            console.log(error);
+            bot.sendMessage(chatId, `Couldn't get ${name}`);
+        });
+    chat[chatId] = {};
+}
+
+async function getHabitatPokemons(chatId, name) {
+    if (name === undefined) {
+        await bot.sendMessage(chatId, 'Oops, seems like you forgot the habitat');
+        return;
+    }
+
+    P.getTypeByName(name)
+        .then((response) => {
+            bot.sendMessage(chatId, PokemonAPI.getHabitatPokemonsMessage(response));
         })
         .catch((error) => {
             console.log(error);
