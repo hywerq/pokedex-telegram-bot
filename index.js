@@ -1,9 +1,11 @@
 import TelegramApi from 'node-telegram-bot-api';
 import Pokedex from 'pokedex-promise-v2';
+import mongoose from 'mongoose';
 import axios from 'axios';
 import {startOptions, findOptions, testAnswerOptions, pokemonOptions, berryOptions, itemOptions} from './options.js'
 import pokeController from './pokeController.js';
-import {TOKEN, YA_KEY} from './config.js';
+import {TOKEN, YA_KEY, MONGOOSE} from './config.js';
+import controller from './mongooseController.js';
 
 const P = new Pokedex();
 const bot = new TelegramApi(TOKEN, {polling: true});
@@ -11,6 +13,8 @@ const bot = new TelegramApi(TOKEN, {polling: true});
 const chat = {};
 
 const start = () => {
+    mongoose.connect(MONGOOSE).catch(err => console.log(err))
+
     bot.setMyCommands([
         {command: '/start', description: 'Greet the user'},
         {command: '/text_commands', description: 'Show all text commands with description'},
@@ -244,7 +248,7 @@ const start = () => {
                     chat[chatId].count++;
                     await bot.sendMessage(chatId, '\u{2728} Absolutely right! \u{2728}');
 
-                    if (chat[chatId].count !== 10) {
+                    if (chat[chatId].count !== 1) {
                         await sendNextPokemon(chatId);
                     } else {
                         const result = (Date.now() - chat[chatId].game) / 1000;
@@ -253,6 +257,11 @@ const start = () => {
                         await bot.sendMessage(chatId, `\u{23F1} Your time is ${result} seconds!`);
                         await bot.sendSticker(chatId, 'https://cdn.tlgrm.app/stickers/11d/46f/11d46fe5-3fa2-4c4e-a912-aa8c917b468f/192/3.webp');
 
+                        await controller.putResult({
+                            user: msg.chat.username,
+                            time: result
+                        });
+                        await controller.getRating();
                         chat[chatId] = {};
                     }
                 } else {
