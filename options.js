@@ -25,7 +25,7 @@ export const findOptions = {
 export const pokemonOptions = {
     reply_markup: JSON.stringify({
         inline_keyboard: [
-            [{ text: '\u{1F63A} Find pokemon', callback_data: 'pokemon'}],///
+            [{ text: '\u{1F50D} Find pokemon', callback_data: 'pokemon'}],///
             [{ text: '\u{1F4C3} Pokemon type info', callback_data: 'type'}],///
             [{ text: '\u{1F4C3} Pokemon nature info', callback_data: 'nature'}],///
             [{ text: '\u{1F50D} All pokemons by type', callback_data: 'all_type'}], ///

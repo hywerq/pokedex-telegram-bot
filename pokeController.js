@@ -3,31 +3,32 @@ function capitalize(s)
     return s[0].toUpperCase() + s.slice(1);
 }
 
-export class PokemonAPI {
+export class PokeController {
     getPokemonDataMessage (response) {
-        const name = response.names.filter(pokeAPIName => pokeAPIName.language.name === 'en')[0].name;
-        const rate = response.is_legendary
-            ? 'Legendary pokemon'
+        const name = '\u{27A1} ' + response.names.filter(pokeAPIName => pokeAPIName.language.name === 'en')[0].name;
+        const rate = '\u{1F5C2} ' + response.is_legendary
+            ? '\u{1F451} Legendary pokemon'
             : response.is_mythical
-                ? 'Epic pokemon'
-                : 'Ordinary pokemon';
-        const description = response.flavor_text_entries.filter(pokeAPIName => pokeAPIName.language.name === 'en')[11].flavor_text;
-        const color = 'Color: ' + response.color.name;
+                ? '\u{1F31F} Epic pokemon'
+                : '\u{2B50} Ordinary pokemon';
+        const description = '\u{1F4C3} ' + response.flavor_text_entries.filter(pokeAPIName => pokeAPIName.language.name === 'en')[11].flavor_text;
+        const color = '\u{1F3A8} Color: ' + response.color.name;
 
-        let  eggGroup = 'Egg group: ';
+        let  eggGroup = '\u{1F95A} Egg group: ';
         if (!Array.isArray(response.egg_groups)) {
             eggGroup += response.egg_groups[0].name;
         }
         else {
             response.egg_groups.forEach(element => {
-                eggGroup+= element.name + ', ';
+                eggGroup += element.name + ', ';
             });
+            eggGroup = eggGroup.slice(eggGroup.length - 2);
         }
 
-        const baseHappiness = 'Base happiness: ' + response.base_happiness;
-        const captureRate = 'Capture rate: ' + response.capture_rate;
+        const baseHappiness = '\u{1F600} Base happiness: ' + response.base_happiness;
+        const captureRate = '\u{1F340} Capture rate: ' + response.capture_rate;
 
-        let habitat = 'Habitat: ';
+        let habitat = '\u{1F5FA} Habitat: ';
         if(response.habitat !== null) {
             if (!Array.isArray(response.habitat)) {
                 habitat += response.habitat.name;
@@ -35,6 +36,7 @@ export class PokemonAPI {
                 response.habitat.forEach(element => {
                     habitat += element.name + ', ';
                 });
+                habitat = habitat.slice(habitat.length - 2);
             }
         }
         else {
@@ -56,17 +58,17 @@ export class PokemonAPI {
             + eggGroup + '\n'
             + habitat + '\n'
             + baseHappiness + '\n'
-            + captureRate + '\n'
+            + captureRate + '\n\n'
             + forms + '\n'
             + genderDiff;
 
         return message;
-    }
+    } ///
     getNatureDataMessage (response) {
-        const increasedStat = 'Increased stat: ' + response.increased_stat.name;
-        const decreasedStat = 'Decreased stat: ' + response.decreased_stat.name;
-        const likesFlavor = 'Likes flavor: ' + response.likes_flavor.name;
-        const hatesFlavor = 'Hates flavor: ' + response.hates_flavor.name;
+        const increasedStat = '\u{1F4C8} Increased stat: ' + response.increased_stat.name;
+        const decreasedStat = '\u{1F4C9} Decreased stat: ' + response.decreased_stat.name;
+        const likesFlavor = '\u{1F44D} Likes flavor: ' + response.likes_flavor.name;
+        const hatesFlavor = '\u{1F44E} Hates flavor: ' + response.hates_flavor.name;
 
         const message =
             increasedStat + '\n'
@@ -75,18 +77,21 @@ export class PokemonAPI {
             + hatesFlavor;
 
         return message;
-    }
+    } ///
     getTypeDataMessage (response) {
-        const damageType = 'Damage type: ' + response.move_damage_class.name;
-        let moves = 'Moves: \n';
+        const damageType = '\u{2694} Damage type: ' + response.move_damage_class.name;
+        let moves = '\u{1F44A} Moves: \n';
 
-        const iterator = response.moves.values();
-        for (let elements of iterator) {
-            moves += elements.name + '\n';
-        }
+        const array = response.moves.sort(function(a,b) {
+            return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
+        });
 
-        return  damageType + '\n' + moves;
-    }
+        array.forEach(element => {
+            moves += capitalize(element.name) + '\n';
+        })
+
+        return  damageType + '\n\n' + moves;
+    } ///
     getHabitatPokemonsMessage(response) {
         let pokemons = '';
 
@@ -95,11 +100,11 @@ export class PokemonAPI {
         });
 
         array.forEach(element => {
-            pokemons += capitalize(element.pokemon.name) + '\n';
+            pokemons += '\u{1F63A} ' + capitalize(element.pokemon.name) + '\n';
         })
 
         return pokemons;
-    }
+    } ///
     getAllTypePokemonsMessage (response) {
         let pokemons = '';
 
@@ -108,12 +113,12 @@ export class PokemonAPI {
             });
 
         array.forEach(element => {
-            pokemons += capitalize(element.pokemon.name) + '\n';
+            pokemons += '\u{1F63A} ' + capitalize(element.pokemon.name) + '\n';
         })
 
         return pokemons;
-    }
-    getAllShapePokemonsMessage (response) {
+    } ///
+    getAllPokemonsMessage (response) {
         let pokemons = '';
 
         const array = response.pokemon_species.sort(function(a,b) {
@@ -121,47 +126,35 @@ export class PokemonAPI {
         });
 
         array.forEach(element => {
-            pokemons += capitalize(element.name) + '\n';
+            pokemons += '\u{1F63A} ' + capitalize(element.name) + '\n';
         })
 
         return pokemons;
-    }
-    getAllColorPokemonsMessage (response) {
-        let pokemons = '';
-
-        const array = response.pokemon_species.sort(function(a,b) {
-            return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
-        });
-
-        array.forEach(element => {
-            pokemons += capitalize(element.name) + '\n';
-        })
-
-        return pokemons;
-    }
+    } ///
 
     getBerryByNameMessage (response) {
-        const name = capitalize(response.name);
-        const firmness = 'Firmness: ' + response.firmness.name;
+        const name = '\u{27A1} ' + capitalize(response.name);
+        const firmness = '\u{1FAA8} Firmness: ' + response.firmness.name;
 
         let array = response.flavors.sort(function(a,b) {
             return a.flavor.name > b.flavor.name ? 1 : b.flavor.name > a.flavor.name ? -1 : 0;
         });
 
-        let flavor = 'Flavors: ';
+        let flavor = '\u{1F365} Flavors: ';
         array.forEach(element => {
             flavor += element.flavor.name + ', ';
         })
+        flavor = flavor.slice(flavor.length - 2);
 
-        let power_type = 'Natural gift type: ' + response.natural_gift_type.name;
+        let power_type = '\u{1F5C2} Natural gift type: ' + response.natural_gift_type.name;
 
-        const growth_time = 'Growth time: ' + response.growth_time;
-        const max_harvest = 'Max harvest: ' + response.max_harvest;
-        const power = 'Natural gift power: ' + response.natural_gift_power;
-        const smoothness = 'Smoothness: ' + response.smoothness;
-        const soil_dryness = 'Soil dryness: ' + response.soil_dryness;
+        const growth_time = '\u{23F1} Growth time: ' + response.growth_time;
+        const max_harvest = '\u{1F331} Max harvest: ' + response.max_harvest;
+        const power = '\u{1F4AB}Natural gift power: ' + response.natural_gift_power;
+        const smoothness = '\u{1F335} Smoothness: ' + response.smoothness;
+        const soil_dryness = '\u{1F4A7} Soil dryness: ' + response.soil_dryness;
 
-        const message = name + '\n\n'
+        return name + '\n\n'
             + growth_time + '\n'
             + max_harvest + '\n'
             + power + '\n'
@@ -169,69 +162,69 @@ export class PokemonAPI {
             + flavor + '\n\n'
             + firmness + '\n'
             + smoothness + '\n'
-            +soil_dryness + '\n';
-
-        return message;
-    }
+            + soil_dryness;
+    }///
     getBerriesByFlavorMessage(response) {
         let array = response.berries.sort(function(a,b) {
             return a.berry.name > b.berry.name ? 1 : b.berry.name > a.berry.name ? -1 : 0;
         });
 
-        let berries = 'Berries: \n';
+        let berries = '';
         array.forEach(element => {
-            berries += capitalize(element.berry.name) + '\n';
+            berries += '\u{1F347} ' + capitalize(element.berry.name) + '\n';
         })
 
         return berries;
-    }
+    }///
     getBerriesByFirmnessMessage(response) {
         let array = response.berries.sort(function(a,b) {
             return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
         });
 
-        let berries = 'Berries: \n';
+        let berries = '';
         array.forEach(element => {
-            berries += capitalize(element.name) + '\n';
+            berries += '\u{1F347}' + capitalize(element.name) + '\n';
         })
 
         return berries;
-    }
+    }///
 
     getItemByNameMessage(response) {
-        const name = capitalize(response.name);
-        const category = 'Category: ' + response.category.name;
+        const name = '\u{27A1} ' + capitalize(response.name);
+        const category = '\u{1F5C2} Category: ' + response.category.name;
         const description = response.effect_entries[0].effect;
-        const cost = 'Cost: ' + response.cost;
+        const cost = '\u{1F4B8} Cost: ' + response.cost;
 
-        let attributes = 'Attributes: ';
         let array = response.attributes.sort(function(a,b) {
             return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
         });
+
+        let attributes = '\u{1F4C3} Attributes: ';
         array.forEach(element => {
             attributes += element.name + ', ';
         })
+        attributes = attributes.slice(attributes.length - 2);
 
         return name + '\n'
             + category + '\n\n'
             + description + '\n'
             + attributes + '\n\n'
             + cost;
-    }
+    } ///
     getItemsByAttributeMessage(response) {
         const description = response.descriptions[0].description;
 
-        let items = 'Items: \n';
         let array = response.items.sort(function(a,b) {
             return a.name > b.name ? 1 : b.name > a.name ? -1 : 0;
         });
+
+        let items = '';
         array.forEach(element => {
-            items += capitalize(element.name) + '\n';
+            items += '\u{1F9F3}' + capitalize(element.name) + '\n';
         })
 
-        return description + '\n\n'
-            + items;
-    }
+        return description + '\n\n' + items;
+    } ///
 }
 
-export default new PokemonAPI();
+export default new PokeController();

@@ -1,9 +1,9 @@
 import TelegramApi from 'node-telegram-bot-api';
 import Pokedex from 'pokedex-promise-v2';
+import axios from 'axios';
 import {startOptions, findOptions, testAnswerOptions, pokemonOptions, berryOptions, itemOptions} from './options.js'
-import PokemonAPI from './PokemonAPI.js';
+import pokeController from './pokeController.js';
 import {TOKEN, YA_KEY} from './config.js';
-import axios from "axios";
 
 const P = new Pokedex();
 const bot = new TelegramApi(TOKEN, {polling: true});
@@ -13,6 +13,8 @@ const chat = {};
 const start = () => {
     bot.setMyCommands([
         {command: '/start', description: 'Greet the user'},
+        {command: '/text_commands', description: 'Show all text commands with description'},
+        {command: '/voice_commands', description: 'Show all voice commands with description'},
         {command: '/game', description: 'Start the guessing game'},
         {command: '/test', description: 'Start pokemon matching test'},
         {command: '/stop', description: 'Stop current game'},
@@ -49,8 +51,10 @@ const start = () => {
             axios(axiosConfig)
                 .then((response) => {
                     const command = response.data.result;
-                    console.log(command)
                     switch (command) {
+                        case 'Старт':
+                            greetUser(chatId);
+                            break;
                         case 'Выбрать категорию':
                             bot.sendMessage(chatId, 'Choose category', findOptions);
                             break;
@@ -63,79 +67,90 @@ const start = () => {
                         case 'Предметы':
                             bot.sendMessage(chatId, 'Item info', itemOptions);
                             break;
+                        case 'Текстовые команды':
+                            showTextCommands(chatId);
+                            break;
+                        case 'Голосовые команды':
+                            showVoiceCommands(chatId);
+                            break;
                         case 'Начать игру':
                             startGame(chatId);
                             break;
                         case 'Начать тест':
                             startTest(chatId);
                             break;
+                        case 'Стоп':
+                            chat[chatId] = {};
+                            bot.sendMessage(chatId, '\u{23F9} Stopped. Next step?', startOptions);
+                            break;
                         case 'Найти покемона':
-                            bot.sendMessage(chatId, 'Give me the name of the pokemon you are looking for\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the name of the pokemon you are looking for\n\n' +
                                 'e.g. pikachu, snorlax, lopunny');
                             chat[chatId] = {find_pokemon: true};
                             break;
                         case 'Найти тип покемона':
-                            bot.sendMessage(chatId, 'Give me the type you are looking for\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the type you are looking for\n\n' +
                                 'e.g. normal, steel, grass');
                             chat[chatId] = {find_type: true};
                             break;
                         case 'Найти характер покемона':
-                            bot.sendMessage(chatId, 'Give me the nature you are looking for\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the nature you are looking for\n\n' +
                                 'e.g. bold, calm, jolly');
                             chat[chatId] = {find_nature: true};
                             break;
                         case 'Найти покемона по месту обитания':
-                            bot.sendMessage(chatId, 'Give me the habitat name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the habitat name\n\n' +
                                 'e.g. ground, urban, jungle');
                             chat[chatId] = {habitat: true};
                             break;
                         case 'Найти всех покемонов по типу':
-                            bot.sendMessage(chatId, 'Give me the pokemons type name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the pokemons type name\n\n' +
                                 'e.g. normal, steel, grass');
                             chat[chatId] = {find_all_type: true};
                             break;
                         case 'Найти всех покемонов по форме':
-                            bot.sendMessage(chatId, 'Give me the shape name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the shape name\n\n' +
                                 'e.g. heart, ball, triangle');
                             chat[chatId] = {find_all_shape: true};
                             break;
                         case 'Найти всех покемонов по цвету':
-                            bot.sendMessage(chatId, 'Give me the color name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the color name\n\n' +
                                 'e.g. black, blue, white');
                             chat[chatId] = {find_all_color: true};
                             break;
                         case 'Найти ягоду':
-                            bot.sendMessage(chatId, 'Give me the berry name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the berry name\n\n' +
                                 'e.g. leppa, tomato, mago');
                             chat[chatId] = {berry: true};
                             break;
                         case 'Найти все ягоды по твердости':
-                            bot.sendMessage(chatId, 'Give me the firmness\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the firmness\n\n' +
                                 'e.g. hard, soft, very-soft');
                             chat[chatId] = {firmness: true};
                             break;
                         case 'Найти все ягоды по вкусу':
-                            bot.sendMessage(chatId, 'Give me the flavor\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the flavor\n\n' +
                                 'e.g. sweet, sour, bitter');
                             chat[chatId] = {flavor: true};
                             break;
                         case 'Найти предмет':
-                            bot.sendMessage(chatId, 'Give me the item\'s name\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the item\'s name\n\n' +
                                 'e.g. poke-ball, ice-heal, potion');
                             chat[chatId] = {item: true};
                             break;
                         case 'Найти все предметы по атрибуту':
-                            bot.sendMessage(chatId, 'Give me the item\'s attribute\n\n' +
+                            bot.sendMessage(chatId, '\u{1F4DD} Give me the item\'s attribute\n\n' +
                                 'e.g. holdable, underground, consumable');
                             chat[chatId] = {attribute: true};
                             break;
                         default:
-                            bot.sendMessage(chatId, 'Couldn\'t recognize your command.\n' +
+                            bot.sendMessage(chatId, '\u{1F641} Couldn\'t recognize your command.\n' +
                                 'Could you repeat, please?')
                     }
                 })
                 .catch((error) => {
-                    bot.sendMessage(chatId, 'Couldn\'t recognize your speech')
+                    console.log(error);
+                    bot.sendMessage(chatId, '\u{1F641} Couldn\'t recognize your speech')
                 });
         });
     });
@@ -151,6 +166,14 @@ const start = () => {
         if (args[0][0] === '/') {
             if (args[0] === '/start') {
                 await greetUser(chatId, msg.chat.first_name);
+                return;
+            }
+            if (args[0] === '/text_commands') {
+                await showTextCommands(chatId);
+                return;
+            }
+            if (args[0] === '/voice_commands') {
+                await showVoiceCommands(chatId);
                 return;
             }
             if (args[0] === '/find_pokemon') {
@@ -211,7 +234,7 @@ const start = () => {
             }
             if (args[0] === '/stop') {
                 chat[chatId] = {};
-                await bot.sendMessage(chatId, 'Stopped. Next move?', startOptions);
+                await bot.sendMessage(chatId, '\u{23F9} Stopped. Next step?', startOptions);
                 return;
             }
         }
@@ -321,6 +344,12 @@ const start = () => {
             case 'find':
                 await bot.sendMessage(chatId, 'Choose category', findOptions);
                 break;
+            case 'text_commands':
+                await showTextCommands(chatId);
+                break;
+            case 'voice_commands':
+                await showVoiceCommands(chatId);
+                break;
             case 'pokemon_info':
                 await bot.sendMessage(chatId, 'Pokemon info', pokemonOptions);
                 break;
@@ -337,62 +366,62 @@ const start = () => {
                 await startTest(chatId);
                 break;
             case 'pokemon':
-                await bot.sendMessage(chatId, 'Give me the name of the pokemon you are looking for\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the name of the pokemon you are looking for\n\n' +
                     'e.g. pikachu, snorlax, lopunny');
                 chat[chatId] = {find_pokemon: true};
                 break;
             case 'type':
-                await bot.sendMessage(chatId, 'Give me the type you are looking for\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the type you are looking for\n\n' +
                     'e.g. normal, steel, grass');
                 chat[chatId] = {find_type: true};
                 break;
             case 'nature':
-                await bot.sendMessage(chatId, 'Give me the nature you are looking for\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the nature you are looking for\n\n' +
                     'e.g. bold, calm, jolly');
                 chat[chatId] = {find_nature: true};
                 break;
             case 'habitat':
-                await bot.sendMessage(chatId, 'Give me the habitat name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the habitat name\n\n' +
                     'e.g. ground, urban, jungle');
                 chat[chatId] = {habitat: true};
                 break;
             case 'all_type':
-                await bot.sendMessage(chatId, 'Give me the pokemons type name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the pokemons type name\n\n' +
                     'e.g. normal, steel, grass');
                 chat[chatId] = {find_all_type: true};
                 break;
             case 'all_shape':
-                await bot.sendMessage(chatId, 'Give me the shape name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the shape name\n\n' +
                     'e.g. heart, ball, triangle');
                 chat[chatId] = {find_all_shape: true};
                 break;
             case 'all_color':
-                await bot.sendMessage(chatId, 'Give me the color name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the color name\n\n' +
                     'e.g. black, blue, white');
                 chat[chatId] = {find_all_color: true};
                 break;
             case 'berry':
-                await bot.sendMessage(chatId, 'Give me the berry name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the berry name\n\n' +
                     'e.g. leppa, tomato, mago');
                 chat[chatId] = {berry: true};
                 break;
             case 'firmness':
-                await bot.sendMessage(chatId, 'Give me the firmness\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the firmness\n\n' +
                     'e.g. hard, soft, very-soft');
                 chat[chatId] = {firmness: true};
                 break;
             case 'flavor':
-                await bot.sendMessage(chatId, 'Give me the flavor\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the flavor\n\n' +
                     'e.g. sweet, sour, bitter');
                 chat[chatId] = {flavor: true};
                 break;
             case 'item':
-                await bot.sendMessage(chatId, 'Give me the item\'s name\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the item\'s name\n\n' +
                     'e.g. poke-ball, ice-heal, potion');
                 chat[chatId] = {item: true};
                 break;
             case 'attribute':
-                await bot.sendMessage(chatId, 'Give me the item\'s attribute\n\n' +
+                await bot.sendMessage(chatId, '\u{1F4DD} Give me the item\'s attribute\n\n' +
                     'e.g. holdable, underground, consumable');
                 chat[chatId] = {attribute: true};
                 break;
@@ -412,6 +441,54 @@ async function sendPardon(chatId, id) {
     await bot.sendMessage(chatId, 'Pardon?', {reply_to_message_id: id});
     await bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/5d8/80e/5d880e68-11fe-47e3-bb16-39da41e6ffd9/192/16.webp');
 }
+
+async function showTextCommands(chatId) {
+    const message =
+        '/start - Greet the user\n' +
+        '/text_commands - Show all text commands with description\n' +
+        '/voice_commands - Show all voice commands with description\n' +
+        '/game - Start the guessing game\n' +
+        '/test - Start pokemon matching test\n' +
+        '/stop - Stop current process\n' +
+        '/find_pokemon [name] - Find pokemon by its name\n' +
+        '/find_type [type] - Find info of pokemon\'s type by its name\n' +
+        '/find_nature [nature] - Find info of pokemon\'s nature by its name\n' +
+        '/habitat [habitat] - Find all pokemons according to habitat\n' +
+        '/all_pokemon_type [type] - Get all pokemons according to their type\n' +
+        '/all_pokemon_shape [shape] - Get all pokemons according to their shape\n' +
+        '/all_pokemon_color [color] - Get all pokemons according to their color\n' +
+        '/find_berry [berry] - Find berry info by its name\n' +
+        '/all_berry_firmness [firmness] - Get all berries according to firmness\n' +
+        '/all_berry_flavor [flavor] - Get all berries according to flavor\n' +
+        '/find_item [item] - Find item info by its name\n' +
+        '/all_item_attribute [attribute] - Get all items according to attribute';
+    await bot.sendMessage(chatId, message);}
+
+async function showVoiceCommands(chatId) {
+    const message =
+        '\u{1F4AC} «Старт» - Greet the user\n' +
+        '\u{1F4AC} «Текстовые команды» - Show all text commands with description\n' +
+        '\u{1F4AC} «Голосовые команды» - Show all voice commands with description\n' +
+        '\u{1F4AC} «Начать игру» - Start the guessing game\n' +
+        '\u{1F4AC} «Начать тест» - Start pokemon matching test\n' +
+        '\u{1F4AC} «Стоп»- Stop current process\n' +
+        '\u{1F4AC} «Выбрать категорию» - Select a category to search\n' +
+        '\u{1F4AC} «Покемоны» - Search in pokemon category\n' +
+        '\u{1F4AC} «Ягоды» - Search in berry category\n' +
+        '\u{1F4AC} «Предметы» - Search item category\n' +
+        '\u{1F4AC} «Найти покемона» - Find pokemon by its name\n' +
+        '\u{1F4AC} «Найти тип покемона» - Find info of pokemon\'s type by its name\n' +
+        '\u{1F4AC} «Найти характер покемона» - Find info of pokemon\'s nature by its name\n' +
+        '\u{1F4AC} «Найти покемона по месту обитания» - Find all pokemons according to habitat\n' +
+        '\u{1F4AC} «Найти всех покемонов по типу» - Get all pokemons according to their type\n' +
+        '\u{1F4AC} «Найти всех покемонов по форме» - Get all pokemons according to their shape\n' +
+        '\u{1F4AC} «Найти всех покемонов по цвету» - Get all pokemons according to their color\n' +
+        '\u{1F4AC} «Найти ягоду» - Find berry info by its name\n' +
+        '\u{1F4AC} «Найти все ягоды по твердости» - Get all berries according to firmness\n' +
+        '\u{1F4AC} «Найти все ягоды по вкусу» - Get all berries according to flavor\n' +
+        '\u{1F4AC} «Найти предмет» - Find item info by its name\n' +
+        '\u{1F4AC} «Найти все предметы по атрибуту» - Get all items according to attribute';
+    await bot.sendMessage(chatId, message);}
 
 /* Game */
 async function startGame(chatId) {
@@ -592,7 +669,7 @@ async function getPokemonSpeciesByName(chatId, name) {
 
     await P.getPokemonSpeciesByName(name, (response, error) => {
         if (!error) {
-            bot.sendMessage(chatId, PokemonAPI.getPokemonDataMessage(response));
+            bot.sendMessage(chatId, pokeController.getPokemonDataMessage(response));
             bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${response.id}.png`);
         } else {
             console.log(error)
@@ -610,7 +687,7 @@ async function getNatureByName(chatId, name) {
 
     P.getNatureByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getNatureDataMessage(response));
+            bot.sendMessage(chatId, pokeController.getNatureDataMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -627,7 +704,7 @@ async function getTypeByName(chatId, name) {
 
     P.getTypeByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getTypeDataMessage(response));
+            bot.sendMessage(chatId, pokeController.getTypeDataMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -644,7 +721,7 @@ async function getAllTypePokemonsByName(chatId, name) {
 
     P.getTypeByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getAllTypePokemonsMessage(response));
+            bot.sendMessage(chatId, pokeController.getAllTypePokemonsMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -661,7 +738,7 @@ async function getAllShapePokemonsByName(chatId, name) {
 
     P.getPokemonShapeByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getAllShapePokemonsMessage(response));
+            bot.sendMessage(chatId, pokeController.getAllPokemonsMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -678,7 +755,7 @@ async function getAllColorPokemonsByName(chatId, name) {
 
     P.getPokemonColorByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getAllColorPokemonsMessage(response));
+            bot.sendMessage(chatId, pokeController.getAllPokemonsMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -695,7 +772,7 @@ async function getHabitatPokemons(chatId, name) {
 
     P.getTypeByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getHabitatPokemonsMessage(response));
+            bot.sendMessage(chatId, pokeController.getHabitatPokemonsMessage(response));
         })
         .catch((error) => {
             console.log(error);
@@ -713,7 +790,7 @@ async function getBerryByName(chatId, name) {
 
     P.getBerryByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getBerryByNameMessage(response));
+            bot.sendMessage(chatId, pokeController.getBerryByNameMessage(response));
             bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${response.item.name}.png`)
         })
         .catch( (error) => {
@@ -731,7 +808,7 @@ async function getBerriesByFirmnessName(chatId, name) {
 
     P.getBerryFirmnessByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getBerriesByFirmnessMessage(response));
+            bot.sendMessage(chatId, pokeController.getBerriesByFirmnessMessage(response));
         })
         .catch( (error) => {
             console.log(error);
@@ -748,7 +825,7 @@ async function getBerriesByFlavorName(chatId, name) {
 
     P.getBerryFlavorByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getBerriesByFlavorMessage(response));
+            bot.sendMessage(chatId, pokeController.getBerriesByFlavorMessage(response));
         })
         .catch( (error) => {
             console.log(error);
@@ -766,7 +843,7 @@ async function getItemByName(chatId, name) {
 
     P.getItemByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getItemByNameMessage(response));
+            bot.sendMessage(chatId, pokeController.getItemByNameMessage(response));
             bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${response.name}.png`)
         })
         .catch( (error) => {
@@ -784,7 +861,7 @@ async function getItemsByAttributeName(chatId, name) {
 
     P.getItemAttributeByName(name)
         .then((response) => {
-            bot.sendMessage(chatId, PokemonAPI.getItemsByAttributeMessage(response));
+            bot.sendMessage(chatId, pokeController.getItemsByAttributeMessage(response));
             bot.sendPhoto(chatId, `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${response.item.name}.png`)
         })
         .catch( (error) => {
