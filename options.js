@@ -1,3 +1,5 @@
+import {CONTACT_URL} from "./config.js";
+
 export const startOptions = {
     reply_markup: JSON.stringify({
         inline_keyboard: [
@@ -7,7 +9,8 @@ export const startOptions = {
             [
                 { text: '\u{1F524} Text commands', callback_data: 'text_commands'},
                 { text: '\u{1F4AC} Voice commands', callback_data: 'voice_commands'}
-            ]
+            ],
+            [{ text: '\u{260E} Contact me', url: CONTACT_URL}]
         ]
     })
 }

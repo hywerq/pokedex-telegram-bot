@@ -1,4 +1,4 @@
-import Rating from './model/rating.js';
+import Rating from '../model/rating.js';
 
 class MongooseController {
     getRating = async () => {
@@ -8,7 +8,7 @@ class MongooseController {
         for(let i = 0; i < rating.length; i++) {
             result += `${i+1}. ${rating[i].user} : ${rating[i].time}\n`;
         }
-        console.log(result);
+
         return result;
     }
 

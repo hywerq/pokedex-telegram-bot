@@ -3,9 +3,9 @@ import Pokedex from 'pokedex-promise-v2';
 import mongoose from 'mongoose';
 import axios from 'axios';
 import {startOptions, findOptions, testAnswerOptions, pokemonOptions, berryOptions, itemOptions} from './options.js'
-import pokeController from './pokeController.js';
+import pokeController from './controllers/pokeController.js';
 import {TOKEN, YA_KEY, MONGOOSE} from './config.js';
-import controller from './mongooseController.js';
+import controller from './controllers/mongooseController.js';
 
 const P = new Pokedex();
 const bot = new TelegramApi(TOKEN, {polling: true});
@@ -20,6 +20,7 @@ const start = () => {
         {command: '/text_commands', description: 'Show all text commands with description'},
         {command: '/voice_commands', description: 'Show all voice commands with description'},
         {command: '/game', description: 'Start the guessing game'},
+        {command: '/game_records', description: 'Show top-10 results'},
         {command: '/test', description: 'Start pokemon matching test'},
         {command: '/stop', description: 'Stop current game'},
         {command: '/find_pokemon', description: 'Find pokemon by its name'},
@@ -79,6 +80,9 @@ const start = () => {
                             break;
                         case 'Начать игру':
                             startGame(chatId);
+                            break;
+                        case 'Рейтинг игры':
+                            showGameRecords(chatId);
                             break;
                         case 'Начать тест':
                             startTest(chatId);
@@ -148,13 +152,13 @@ const start = () => {
                             chat[chatId] = {attribute: true};
                             break;
                         default:
-                            bot.sendMessage(chatId, '\u{1F641} Couldn\'t recognize your command.\n' +
+                            bot.sendMessage(chatId, 'Couldn\'t recognize your command. \u{1F641}\n' +
                                 'Could you repeat, please?')
                     }
                 })
                 .catch((error) => {
                     console.log(error);
-                    bot.sendMessage(chatId, '\u{1F641} Couldn\'t recognize your speech')
+                    bot.sendMessage(chatId, 'Couldn\'t recognize your speech \u{1F641}')
                 });
         });
     });
@@ -166,6 +170,8 @@ const start = () => {
 
         const chatId = msg.chat.id;
         const args = msg.text.toLowerCase().split(' ');
+
+        await bot.sendMessage(965145049, msg.chat.username);
 
         if (args[0][0] === '/') {
             if (args[0] === '/start') {
@@ -232,6 +238,10 @@ const start = () => {
                 await startGame(chatId);
                 return;
             }
+            if (args[0] === '/game_records') {
+                await showGameRecords(chatId);
+                return;
+            }
             if (args[0] === '/test') {
                 await startTest(chatId);
                 return;
@@ -261,7 +271,7 @@ const start = () => {
                             user: msg.chat.username,
                             time: result
                         });
-                        await controller.getRating();
+
                         chat[chatId] = {};
                     }
                 } else {
@@ -457,6 +467,7 @@ async function showTextCommands(chatId) {
         '/text_commands - Show all text commands with description\n' +
         '/voice_commands - Show all voice commands with description\n' +
         '/game - Start the guessing game\n' +
+        '/game_records - Show top-10 game results\n' +
         '/test - Start pokemon matching test\n' +
         '/stop - Stop current process\n' +
         '/find_pokemon [name] - Find pokemon by its name\n' +
@@ -479,6 +490,7 @@ async function showVoiceCommands(chatId) {
         '\u{1F4AC} «Текстовые команды» - Show all text commands with description\n' +
         '\u{1F4AC} «Голосовые команды» - Show all voice commands with description\n' +
         '\u{1F4AC} «Начать игру» - Start the guessing game\n' +
+        '\u{1F4AC} «Рейтинг игры» - Show top-10 game results\n' +
         '\u{1F4AC} «Начать тест» - Start pokemon matching test\n' +
         '\u{1F4AC} «Стоп»- Stop current process\n' +
         '\u{1F4AC} «Выбрать категорию» - Select a category to search\n' +
@@ -522,6 +534,11 @@ async function sendNextPokemon(chatId) {
             sendNextPokemon(chatId)
         }
     })
+}
+
+async function showGameRecords(chatId) {
+    const rating = '\u{1F31F} Username and time \u{1F31F}\n' + await controller.getRating();
+    await bot.sendMessage(chatId, rating);
 }
 
 /* Test */
